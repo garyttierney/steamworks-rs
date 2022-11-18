@@ -2,7 +2,7 @@ use crate::networking_sockets_callback;
 use crate::networking_types::{
     ListenSocketEvent, MessageNumber, NetConnectionEnd, NetworkingAvailability,
     NetworkingAvailabilityError, NetworkingConfigEntry, NetworkingIdentity, NetworkingMessage,
-    SendFlags, SteamIpAddr,
+    SendFlags, SocketEvent, SteamIpAddr,
 };
 use crate::{CallbackHandle, Inner, SResult};
 #[cfg(test)]
@@ -422,7 +422,7 @@ pub struct NetConnection<Manager> {
     inner: Arc<Inner<Manager>>,
     socket: Option<Arc<InnerSocket<Manager>>>,
     _callback_handle: Option<Arc<CallbackHandle<Manager>>>,
-    _event_receiver: Option<Receiver<()>>,
+    event_receiver: Option<Receiver<SocketEvent>>,
 
     is_handled: bool,
 }
@@ -443,7 +443,7 @@ impl<Manager: 'static> NetConnection<Manager> {
             inner,
             socket: Some(socket),
             _callback_handle: None,
-            _event_receiver: None,
+            event_receiver: None,
             is_handled: false,
         }
     }
@@ -468,7 +468,7 @@ impl<Manager: 'static> NetConnection<Manager> {
             inner,
             socket: None,
             _callback_handle: Some(callback),
-            _event_receiver: Some(receiver),
+            event_receiver: Some(receiver),
             is_handled: false,
         }
     }
@@ -486,7 +486,7 @@ impl<Manager: 'static> NetConnection<Manager> {
             inner,
             socket: None,
             _callback_handle: None,
-            _event_receiver: None,
+            event_receiver: None,
             is_handled: false,
         }
     }
@@ -799,6 +799,13 @@ impl<Manager: 'static> NetConnection<Manager> {
             )
         };
         debug_assert!(was_successful);
+    }
+
+    /// Tries to receive a pending event. This will never block.
+    pub fn try_receive_event(&self) -> Option<SocketEvent> {
+        self.event_receiver
+            .as_ref()
+            .and_then(|receiver| receiver.try_recv().ok())
     }
 
     /// Set the connection state to be handled externally. The struct will no longer close the connection on drop.

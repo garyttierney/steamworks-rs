@@ -90,7 +90,21 @@ impl<Manager: 'static> ConnectionCallbackHandler<Manager> {
         }
     }
 
-    fn independent_connection_callback(&self, _event: NetConnectionStatusChanged) {
-        // TODO: Handle event for independent connections
+    fn independent_connection_callback(&self, event: NetConnectionStatusChanged) {
+        if let Some(inner) = self.inner.upgrade() {
+            let data = inner.networking_sockets_data.lock().unwrap();
+            if let Some(sender) = data
+                .independent_connections
+                .get(&event.connection)
+            {
+                if let Ok(event) = event.into_socket_event() {
+                    if let Err(_err) = sender.send(event) {
+                        // TODO: status update has been dropped
+                    }
+                } else {
+                    // Ignore events that couldn't be converted
+                }
+            }
+        }
     }
 }

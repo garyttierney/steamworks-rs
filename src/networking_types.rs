@@ -1128,6 +1128,25 @@ unsafe impl Callback for NetConnectionStatusChanged {
 }
 
 impl NetConnectionStatusChanged {
+    pub(crate) fn into_socket_event(self) -> Result<SocketEvent, NetConnectionError> {
+        match self.connection_info.state() {
+            Ok(NetworkingConnectionState::None | NetworkingConnectionState::FindingRoute) => {
+                Err(UnhandledType(NetworkingConnectionState::None))
+            }
+            Ok(NetworkingConnectionState::Connecting) => Ok(SocketEvent::Connecting),
+            Ok(NetworkingConnectionState::Connected) => Ok(SocketEvent::Connected),
+            Ok(
+                NetworkingConnectionState::ClosedByPeer
+                | NetworkingConnectionState::ProblemDetectedLocally,
+            ) => Ok(SocketEvent::Disconnected(
+                self.connection_info
+                    .end_reason()
+                    .expect("disconnect event received, but no valid end reason was given"),
+            )),
+            Err(err) => Err(NetConnectionError::UnknownType(err)),
+        }
+    }
+
     pub(crate) fn into_listen_socket_event<Manager: 'static>(
         self,
         socket: Arc<InnerSocket<Manager>>,
@@ -1189,6 +1208,12 @@ impl NetConnectionStatusChanged {
             Err(err) => Err(NetConnectionError::UnknownType(err)),
         }
     }
+}
+
+pub enum SocketEvent {
+    Connecting,
+    Connected,
+    Disconnected(NetConnectionEnd),
 }
 
 pub enum ListenSocketEvent<Manager> {
