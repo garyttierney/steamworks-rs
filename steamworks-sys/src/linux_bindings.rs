@@ -133,7 +133,7 @@ pub const __STDC_IEC_60559_COMPLEX__: u32 = 201404;
 pub const __STDC_ISO_10646__: u32 = 201706;
 pub const __GNU_LIBRARY__: u32 = 6;
 pub const __GLIBC__: u32 = 2;
-pub const __GLIBC_MINOR__: u32 = 35;
+pub const __GLIBC_MINOR__: u32 = 36;
 pub const _SYS_CDEFS_H: u32 = 1;
 pub const __glibc_c99_flexarr_available: u32 = 1;
 pub const __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI: u32 = 0;
@@ -597,6 +597,7 @@ pub enum EResult {
     k_EResultInsufficientBattery = 124,
     k_EResultChargerRequired = 125,
     k_EResultCachedCredentialInvalid = 126,
+    K_EResultPhoneNumberIsVOIP = 127,
 }
 #[repr(u32)]
 #[non_exhaustive]
@@ -15123,6 +15124,11 @@ fn bindgen_test_layout_SteamInputActionEvent_t() {
         )
     );
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ScePadTriggerEffectParam {
+    _unused: [u8; 0],
+}
 pub type SteamInputActionEventCallbackPointer =
     ::std::option::Option<unsafe extern "C" fn(arg1: *mut SteamInputActionEvent_t)>;
 #[repr(C)]
@@ -26970,6 +26976,9 @@ extern "C" {
     ) -> bool;
 }
 extern "C" {
+    pub fn SteamAPI_ISteamApps_SetDlcContext(self_: *mut ISteamApps, nAppID: AppId_t) -> bool;
+}
+extern "C" {
     pub fn SteamAPI_SteamNetworking_v006() -> *mut ISteamNetworking;
 }
 extern "C" {
@@ -27912,6 +27921,13 @@ extern "C" {
     pub fn SteamAPI_ISteamInput_GetSessionInputConfigurationSettings(
         self_: *mut ISteamInput,
     ) -> uint16;
+}
+extern "C" {
+    pub fn SteamAPI_ISteamInput_SetDualSenseTriggerEffect(
+        self_: *mut ISteamInput,
+        inputHandle: InputHandle_t,
+        pParam: *const ScePadTriggerEffectParam,
+    );
 }
 extern "C" {
     pub fn SteamAPI_SteamController_v008() -> *mut ISteamController;
